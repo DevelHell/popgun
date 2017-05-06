@@ -26,9 +26,11 @@ type Config struct {
 
 type Authorizator interface {
 	Authorize(user, pass string) bool
+	IsAuthorized() bool
 }
 
 type Backend interface {
+	Stat(user string) (messages, octets int, err error)
 }
 
 var (
@@ -47,6 +49,7 @@ type Client struct {
 	backend      Backend
 	user         string
 	pass         string
+	lastCommand  string
 }
 
 func newClient(authorizator Authorizator, backend Backend) *Client {
@@ -86,10 +89,11 @@ func (c Client) handle(conn net.Conn) {
 		}
 
 		cmd, args := c.parseInput(input)
+		c.lastCommand = cmd
 		exec, ok := c.commands[cmd]
 		if !ok {
 			c.printer.Err("Invalid command %s", cmd)
-			log.Printf("Invalid command %s", cmd)
+			log.Printf("Invalid command: %s", cmd)
 			continue
 		}
 		state, err := exec.Run(&c, args)
@@ -151,13 +155,15 @@ func NewPrinter(conn net.Conn) *Printer {
 }
 
 func (p Printer) Welcome() {
-	fmt.Fprint(p.conn, "+OK POPgun POP3 server ready\r\n")
+	fmt.Fprintf(p.conn, "+OK POPgun POP3 server ready\r\n")
 }
 
 func (p Printer) Ok(msg string, a ...interface{}) {
-	fmt.Fprint(p.conn, "+OK %s\r\n", fmt.Sprintf(msg, a...))
+	msg = strings.Replace(msg, "\n", "\r\n", -1)
+	fmt.Fprintf(p.conn, "+OK %s\r\n", fmt.Sprintf(msg, a...))
 }
 
 func (p Printer) Err(msg string, a ...interface{}) {
-	fmt.Fprint(p.conn, "-ERR %s\r\n", fmt.Sprintf(msg, a...))
+	msg = strings.Replace(msg, "\n", "\r\n", -1)
+	fmt.Fprintf(p.conn, "-ERR %s\r\n", fmt.Sprintf(msg, a...))
 }

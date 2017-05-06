@@ -29,6 +29,10 @@ func (cmd PassCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_AUTHORIZATION {
 		return 0, ErrInvalidState
 	}
+	if c.lastCommand != "USER" {
+		c.printer.Err("PASS can be executed only directly after USER command")
+		return STATE_AUTHORIZATION, nil
+	}
 	c.pass = args[0]
 	if !c.authorizator.Authorize(c.user, c.pass) {
 		c.printer.Err("Invalid username or password")
@@ -38,9 +42,32 @@ func (cmd PassCommand) Run(c *Client, args []string) (int, error) {
 	return STATE_TRANSACTION, nil
 }
 
+type StatCommand struct{}
+
+func (cmd StatCommand) Run(c *Client, args []string) (int, error) {
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
+	messages, octets, err := c.backend.Stat(c.user)
+	if err != nil {
+		return 0, err
+	}
+	c.printer.Ok("%s %s", messages, octets)
+	return STATE_TRANSACTION, nil
+}
+
 type ListCommand struct{}
 
 func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
 	return 0, nil
 }
 
