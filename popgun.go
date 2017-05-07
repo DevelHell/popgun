@@ -36,6 +36,9 @@ type Backend interface {
 	Retr(user string, msgId int) (message string, err error)
 	Dele(user string, msgId int) error
 	Rset(user string) error
+	Update(user string) error
+	Lock(user string) error
+	Unlock(user string) error
 }
 
 var (

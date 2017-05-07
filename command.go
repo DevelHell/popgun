@@ -13,9 +13,24 @@ type Executable interface {
 type QuitCommand struct{}
 
 func (cmd QuitCommand) Run(c *Client, args []string) (int, error) {
+	newState := c.currentState
+	if c.currentState == STATE_TRANSACTION {
+		err := c.backend.Update(c.user)
+		if err != nil {
+			return 0, fmt.Errorf("Error updating maildrop for user %s: %v", c.user, err)
+		}
+		err = c.backend.Unlock(c.user)
+		if err != nil {
+			c.printer.Err("Server was unable to unlock maildrop")
+			return 0, fmt.Errorf("Error unlocking maildrop for user %s: %v", c.user, err)
+		}
+		newState = STATE_UPDATE
+	}
+
 	c.isAlive = false
 	c.printer.Ok("Goodbye")
-	return STATE_UPDATE, nil
+
+	return newState, nil
 }
 
 type UserCommand struct{}
@@ -45,7 +60,15 @@ func (cmd PassCommand) Run(c *Client, args []string) (int, error) {
 		c.printer.Err("Invalid username or password")
 		return STATE_AUTHORIZATION, nil
 	}
+
+	err := c.backend.Lock(c.user)
+	if err != nil {
+		c.printer.Err("Server was unable to lock maildrop")
+		return 0, fmt.Errorf("Error locking maildrop for user %s: %v", c.user, err)
+	}
+
 	c.printer.Ok("User Successfully Logged on")
+
 	return STATE_TRANSACTION, nil
 }
 
@@ -133,6 +156,7 @@ func (cmd RetrCommand) Run(c *Client, args []string) (int, error) {
 		return 0, fmt.Errorf("Error calling 'RETR %d' for user %s: %v", msgId, c.user, err)
 	}
 	lines := strings.Split(message, "\r\n")
+	c.printer.Ok("")
 	c.printer.MultiLine(lines)
 	return STATE_TRANSACTION, nil
 }
