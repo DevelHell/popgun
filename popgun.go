@@ -25,7 +25,6 @@ type Config struct {
 
 type Authorizator interface {
 	Authorize(user, pass string) bool
-	IsAuthorized() bool
 }
 
 type Backend interface {
@@ -44,7 +43,6 @@ type Backend interface {
 
 var (
 	ErrInvalidState = fmt.Errorf("Invalid state")
-	ErrUnauthorized = fmt.Errorf("Unauthorized")
 )
 
 //---------------CLIENT
@@ -133,19 +131,30 @@ func (c Client) parseInput(input string) (string, []string) {
 
 type Server struct {
 	listener net.Listener
+	config   Config
+	auth     Authorizator
+	backend  Backend
 }
 
-func (s Server) Run(cfg Config, auth Authorizator, backend Backend) error {
+func NewServer(cfg Config, auth Authorizator, backend Backend) *Server {
+	return &Server{
+		config:  cfg,
+		auth:    auth,
+		backend: backend,
+	}
+}
+
+func (s Server) Start() error {
 
 	var err error
-	s.listener, err = net.Listen("tcp", cfg.ListenInterface)
+	s.listener, err = net.Listen("tcp", s.config.ListenInterface)
 	if err != nil {
-		log.Printf("Error: could not listen on %s", cfg.ListenInterface)
+		log.Printf("Error: could not listen on %s", s.config.ListenInterface)
 		return err
 	}
 
 	go func() {
-		fmt.Printf("Server listening on: %s\n", cfg.ListenInterface)
+		fmt.Printf("Server listening on: %s\n", s.config.ListenInterface)
 		for {
 			conn, err := s.listener.Accept()
 			if err != nil {
@@ -153,7 +162,7 @@ func (s Server) Run(cfg Config, auth Authorizator, backend Backend) error {
 				continue
 			}
 
-			c := newClient(auth, backend)
+			c := newClient(s.auth, s.backend)
 			go c.handle(conn)
 		}
 	}()

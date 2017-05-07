@@ -78,9 +78,6 @@ func (cmd StatCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
 	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
-	}
 
 	messages, octets, err := c.backend.Stat(c.user)
 	if err != nil {
@@ -95,9 +92,6 @@ type ListCommand struct{}
 func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
-	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
 	}
 
 	if len(args) > 0 {
@@ -137,9 +131,6 @@ func (cmd RetrCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
 	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
-	}
 	if len(args) == 0 {
 		c.printer.Err("Missing argument for RETR command")
 		return 0, fmt.Errorf("Missing argument for RETR called by user %s", c.user)
@@ -167,9 +158,6 @@ func (cmd DeleCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
 	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
-	}
 	if len(args) == 0 {
 		c.printer.Err("Missing argument for DELE command")
 		return 0, fmt.Errorf("Missing argument for DELE called by user %s", c.user)
@@ -196,9 +184,6 @@ func (cmd NoopCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
 	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
-	}
 	c.printer.Ok("")
 	return STATE_TRANSACTION, nil
 }
@@ -208,9 +193,6 @@ type RsetCommand struct{}
 func (cmd RsetCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
-	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
 	}
 	err := c.backend.Rset(c.user)
 	if err != nil {
@@ -227,9 +209,6 @@ type UidlCommand struct{}
 func (cmd UidlCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_TRANSACTION {
 		return 0, ErrInvalidState
-	}
-	if !c.authorizator.IsAuthorized() {
-		return 0, ErrUnauthorized
 	}
 
 	if len(args) > 0 {
@@ -267,8 +246,6 @@ type CapaCommand struct{}
 
 func (cmd CapaCommand) Run(c *Client, args []string) (int, error) {
 	c.printer.Ok("")
-	fmt.Println("calling capa")
-
 	var commands []string
 
 	if c.currentState == STATE_AUTHORIZATION {
