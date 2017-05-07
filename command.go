@@ -140,7 +140,30 @@ func (cmd RetrCommand) Run(c *Client, args []string) (int, error) {
 type DeleCommand struct{}
 
 func (cmd DeleCommand) Run(c *Client, args []string) (int, error) {
-	return 0, nil
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
+	if len(args) == 0 {
+		c.printer.Err("Missing argument for DELE command")
+		return 0, fmt.Errorf("Missing argument for DELE called by user %s", c.user)
+	}
+
+	msgId, err := strconv.Atoi(args[0])
+	if err != nil {
+		c.printer.Err("Invalid argument: %s", args[0])
+		return 0, fmt.Errorf("Invalid argument for DELE given by user %s: %v", c.user, err)
+	}
+	err = c.backend.Dele(c.user, msgId)
+	if err != nil {
+		return 0, fmt.Errorf("Error calling 'DELE %d' for user %s: %v", msgId, c.user, err)
+	}
+
+	c.printer.Ok("Message %d deleted", msgId)
+
+	return STATE_TRANSACTION, nil
 }
 
 type NoopCommand struct{}
