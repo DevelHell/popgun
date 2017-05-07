@@ -93,11 +93,12 @@ func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("Error calling LIST for user %s: %v", c.user, err)
 		}
-		r := fmt.Sprintf("%d messages", len(messages))
-		for _, msg := range messages {
-			r = fmt.Sprintf("%s\n%d %d", r, msg[0], msg[1])
+		c.printer.Ok("%d messages", len(messages))
+		messagesList := make([]string, len(messages))
+		for i, msg := range messages {
+			messagesList[i] = fmt.Sprintf("%d %d", msg[0], msg[1])
 		}
-		c.printer.Ok(r)
+		c.printer.MultiLine(messagesList)
 	}
 
 	return STATE_TRANSACTION, nil

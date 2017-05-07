@@ -167,11 +167,16 @@ func (p Printer) Welcome() {
 }
 
 func (p Printer) Ok(msg string, a ...interface{}) {
-	msg = strings.Replace(msg, "\n", "\r\n", -1)
 	fmt.Fprintf(p.conn, "+OK %s\r\n", fmt.Sprintf(msg, a...))
 }
 
 func (p Printer) Err(msg string, a ...interface{}) {
-	msg = strings.Replace(msg, "\n", "\r\n", -1)
 	fmt.Fprintf(p.conn, "-ERR %s\r\n", fmt.Sprintf(msg, a...))
+}
+
+func (p Printer) MultiLine(msgs []string) {
+	for _, line := range msgs {
+		fmt.Fprintf(p.conn, "%s\r\n", line)
+	}
+	fmt.Fprint(p.conn, ".\r\n")
 }
