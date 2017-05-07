@@ -35,6 +35,7 @@ type Backend interface {
 	ListMessage(user string, msgId int) (exists bool, octets int, err error)
 	Retr(user string, msgId int) (message string, err error)
 	Dele(user string, msgId int) error
+	Rset(user string) error
 }
 
 var (

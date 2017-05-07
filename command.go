@@ -182,5 +182,18 @@ func (cmd NoopCommand) Run(c *Client, args []string) (int, error) {
 type RsetCommand struct{}
 
 func (cmd RsetCommand) Run(c *Client, args []string) (int, error) {
-	return 0, nil
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
+	err := c.backend.Rset(c.user)
+	if err != nil {
+		return 0, fmt.Errorf("Error calling 'RSET' for user %s: %v", c.user, err)
+	}
+
+	c.printer.Ok("")
+
+	return STATE_TRANSACTION, nil
 }
