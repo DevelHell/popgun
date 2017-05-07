@@ -146,7 +146,14 @@ func (cmd DeleCommand) Run(c *Client, args []string) (int, error) {
 type NoopCommand struct{}
 
 func (cmd NoopCommand) Run(c *Client, args []string) (int, error) {
-	return 0, nil
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
+	c.printer.Ok("")
+	return STATE_TRANSACTION, nil
 }
 
 type RsetCommand struct{}
