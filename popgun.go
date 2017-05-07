@@ -31,6 +31,8 @@ type Authorizator interface {
 
 type Backend interface {
 	Stat(user string) (messages, octets int, err error)
+	List(user string) ([][2]int, error)
+	ListMessage(user string, msgId int) (exists bool, octets int, err error)
 }
 
 var (
@@ -58,6 +60,12 @@ func newClient(authorizator Authorizator, backend Backend) *Client {
 	commands["QUIT"] = QuitCommand{}
 	commands["USER"] = UserCommand{}
 	commands["PASS"] = PassCommand{}
+	commands["STAT"] = StatCommand{}
+	commands["LIST"] = ListCommand{}
+	commands["RETR"] = RetrCommand{}
+	commands["DELE"] = DeleCommand{}
+	commands["NOOP"] = NoopCommand{}
+	commands["RSET"] = RsetCommand{}
 
 	return &Client{
 		commands:     commands,
@@ -89,7 +97,6 @@ func (c Client) handle(conn net.Conn) {
 		}
 
 		cmd, args := c.parseInput(input)
-		c.lastCommand = cmd
 		exec, ok := c.commands[cmd]
 		if !ok {
 			c.printer.Err("Invalid command %s", cmd)
@@ -102,6 +109,7 @@ func (c Client) handle(conn net.Conn) {
 			log.Print("Error executing command: ", err)
 			continue
 		}
+		c.lastCommand = cmd
 		c.currentState = state
 	}
 }
