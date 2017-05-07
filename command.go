@@ -116,14 +116,14 @@ func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 		}
 		c.printer.Ok("%d %d", msgId, octets)
 	} else {
-		messages, err := c.backend.List(c.user)
+		octets, err := c.backend.List(c.user)
 		if err != nil {
 			return 0, fmt.Errorf("Error calling LIST for user %s: %v", c.user, err)
 		}
-		c.printer.Ok("%d messages", len(messages))
-		messagesList := make([]string, len(messages))
-		for i, msg := range messages {
-			messagesList[i] = fmt.Sprintf("%d %d", msg[0], msg[1])
+		c.printer.Ok("%d messages", len(octets))
+		messagesList := make([]string, len(octets))
+		for i, octet := range octets {
+			messagesList[i] = fmt.Sprintf("%d %d", i, octet)
 		}
 		c.printer.MultiLine(messagesList)
 	}
@@ -220,4 +220,64 @@ func (cmd RsetCommand) Run(c *Client, args []string) (int, error) {
 	c.printer.Ok("")
 
 	return STATE_TRANSACTION, nil
+}
+
+type UidlCommand struct{}
+
+func (cmd UidlCommand) Run(c *Client, args []string) (int, error) {
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
+
+	if len(args) > 0 {
+		msgId, err := strconv.Atoi(args[0])
+		if err != nil {
+			c.printer.Err("Invalid argument: %s", args[0])
+			return 0, fmt.Errorf("Invalid argument for UIDL given by user %s: %v", c.user, err)
+		}
+		exists, uid, err := c.backend.UidlMessage(c.user, msgId)
+		if err != nil {
+			return 0, fmt.Errorf("Error calling 'UIDL %d' for user %s: %v", msgId, c.user, err)
+		}
+		if !exists {
+			c.printer.Err("no such message")
+			return STATE_TRANSACTION, nil
+		}
+		c.printer.Ok("%d %d", msgId, uid)
+	} else {
+		uids, err := c.backend.Uidl(c.user)
+		if err != nil {
+			return 0, fmt.Errorf("Error calling UIDL for user %s: %v", c.user, err)
+		}
+		c.printer.Ok("%d messages", len(uids))
+		uidsList := make([]string, len(uids))
+		for i, uid := range uids {
+			uidsList[i] = fmt.Sprintf("%d %d", i, uid)
+		}
+		c.printer.MultiLine(uidsList)
+	}
+
+	return STATE_TRANSACTION, nil
+}
+
+type CapaCommand struct{}
+
+func (cmd CapaCommand) Run(c *Client, args []string) (int, error) {
+	c.printer.Ok("")
+	fmt.Println("calling capa")
+
+	var commands []string
+
+	if c.currentState == STATE_AUTHORIZATION {
+		commands = []string{"USER", "UIDL"}
+	} else {
+		commands = []string{"USER", "UIDL"}
+	}
+
+	c.printer.MultiLine(commands)
+
+	return c.currentState, nil
 }

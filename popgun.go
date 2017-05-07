@@ -1,6 +1,5 @@
 /*
-- implementation of POP3 server according to rfc1939
-- inspired a bit by https://github.com/r0stig/golang-pop3
+- implementation of POP3 server according to rfc1939, rfc2449 in progress
 */
 
 package popgun
@@ -31,11 +30,13 @@ type Authorizator interface {
 
 type Backend interface {
 	Stat(user string) (messages, octets int, err error)
-	List(user string) (messages [][2]int, err error)
+	List(user string) (octets []int, err error)
 	ListMessage(user string, msgId int) (exists bool, octets int, err error)
 	Retr(user string, msgId int) (message string, err error)
 	Dele(user string, msgId int) error
 	Rset(user string) error
+	Uidl(user string) (uids []string, err error)
+	UidlMessage(user string, msgId int) (exists bool, uid string, err error)
 	Update(user string) error
 	Lock(user string) error
 	Unlock(user string) error
@@ -72,6 +73,8 @@ func newClient(authorizator Authorizator, backend Backend) *Client {
 	commands["DELE"] = DeleCommand{}
 	commands["NOOP"] = NoopCommand{}
 	commands["RSET"] = RsetCommand{}
+	commands["UIDL"] = UidlCommand{}
+	commands["CAPA"] = CapaCommand{}
 
 	return &Client{
 		commands:     commands,
