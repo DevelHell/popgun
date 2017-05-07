@@ -3,6 +3,7 @@ package popgun
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Executable interface {
@@ -38,6 +39,7 @@ func (cmd PassCommand) Run(c *Client, args []string) (int, error) {
 		c.printer.Err("PASS can be executed only directly after USER command")
 		return STATE_AUTHORIZATION, nil
 	}
+
 	c.pass = args[0]
 	if !c.authorizator.Authorize(c.user, c.pass) {
 		c.printer.Err("Invalid username or password")
@@ -56,6 +58,7 @@ func (cmd StatCommand) Run(c *Client, args []string) (int, error) {
 	if !c.authorizator.IsAuthorized() {
 		return 0, ErrUnauthorized
 	}
+
 	messages, octets, err := c.backend.Stat(c.user)
 	if err != nil {
 		return 0, fmt.Errorf("Error calling Stat for user %s: %v", c.user, err)
@@ -73,6 +76,7 @@ func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 	if !c.authorizator.IsAuthorized() {
 		return 0, ErrUnauthorized
 	}
+
 	if len(args) > 0 {
 		msgId, err := strconv.Atoi(args[0])
 		if err != nil {
@@ -81,7 +85,7 @@ func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 		}
 		exists, octets, err := c.backend.ListMessage(c.user, msgId)
 		if err != nil {
-			return 0, fmt.Errorf("Error calling LIST [arg] for user %s: %v", c.user, err)
+			return 0, fmt.Errorf("Error calling 'LIST %d' for user %s: %v", msgId, c.user, err)
 		}
 		if !exists {
 			c.printer.Err("no such message")
@@ -107,7 +111,30 @@ func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 type RetrCommand struct{}
 
 func (cmd RetrCommand) Run(c *Client, args []string) (int, error) {
-	return 0, nil
+	if c.currentState != STATE_TRANSACTION {
+		return 0, ErrInvalidState
+	}
+	if !c.authorizator.IsAuthorized() {
+		return 0, ErrUnauthorized
+	}
+	if len(args) == 0 {
+		c.printer.Err("Missing argument for RETR command")
+		return 0, fmt.Errorf("Missing argument for RETR called by user %s", c.user)
+	}
+
+	msgId, err := strconv.Atoi(args[0])
+	if err != nil {
+		c.printer.Err("Invalid argument: %s", args[0])
+		return 0, fmt.Errorf("Invalid argument for RETR given by user %s: %v", c.user, err)
+	}
+
+	message, err := c.backend.Retr(c.user, msgId)
+	if err != nil {
+		return 0, fmt.Errorf("Error calling 'RETR %d' for user %s: %v", msgId, c.user, err)
+	}
+	lines := strings.Split(message, "\r\n")
+	c.printer.MultiLine(lines)
+	return STATE_TRANSACTION, nil
 }
 
 type DeleCommand struct{}

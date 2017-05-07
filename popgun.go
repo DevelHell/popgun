@@ -31,8 +31,9 @@ type Authorizator interface {
 
 type Backend interface {
 	Stat(user string) (messages, octets int, err error)
-	List(user string) ([][2]int, error)
+	List(user string) (messages [][2]int, err error)
 	ListMessage(user string, msgId int) (exists bool, octets int, err error)
+	Retr(user string, msgId int) (message string, err error)
 }
 
 var (
