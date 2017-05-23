@@ -2,6 +2,7 @@ package backends
 
 import "fmt"
 
+// DummyAuthorizator is a fake authorizator interface implementation used for test
 type DummyAuthorizator struct {
 }
 
@@ -9,6 +10,7 @@ func (a DummyAuthorizator) Authorize(user, pass string) bool {
 	return true
 }
 
+// DummyBackend is a fake backend interface implementation used for test
 type DummyBackend struct {
 }
 

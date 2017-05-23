@@ -154,11 +154,11 @@ func (s Server) Start() error {
 	}
 
 	go func() {
-		fmt.Printf("Server listening on: %s\n", s.config.ListenInterface)
+		log.Printf("Server listening on: %s\n", s.config.ListenInterface)
 		for {
 			conn, err := s.listener.Accept()
 			if err != nil {
-				log.Print("Error: could not accept connection: ", err)
+				log.Println("Error: could not accept connection: ", err)
 				continue
 			}
 

@@ -234,7 +234,7 @@ func (cmd UidlCommand) Run(c *Client, args []string) (int, error) {
 		c.printer.Ok("%d messages", len(uids))
 		uidsList := make([]string, len(uids))
 		for i, uid := range uids {
-			uidsList[i] = fmt.Sprintf("%d %d", i, uid)
+			uidsList[i] = fmt.Sprintf("%d %s", i, uid)
 		}
 		c.printer.MultiLine(uidsList)
 	}

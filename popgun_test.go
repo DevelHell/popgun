@@ -100,7 +100,18 @@ func TestClient_parseInput(t *testing.T) {
 }
 
 func TestServer_Start(t *testing.T) {
-
+	backend := backends.DummyBackend{}
+	authorizator := backends.DummyAuthorizator{}
+	cfg := Config{
+		ListenInterface: "localhost:3001",
+	}
+	server := NewServer(cfg, authorizator, backend)
+	server.Start()
+	conn, err := net.Dial("tcp", cfg.ListenInterface)
+	if err != nil {
+		t.Errorf("Expected listening on '%s', but could not connect", cfg.ListenInterface)
+	}
+	defer conn.Close()
 }
 
 type printerFunc func(conn net.Conn)
