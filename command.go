@@ -39,6 +39,9 @@ func (cmd UserCommand) Run(c *Client, args []string) (int, error) {
 	if c.currentState != STATE_AUTHORIZATION {
 		return 0, ErrInvalidState
 	}
+	if len(args) != 1 {
+		return 0, fmt.Errorf("Invalid arguments count: %d", len(args))
+	}
 	c.user = args[0]
 	c.printer.Ok("")
 	return STATE_AUTHORIZATION, nil
@@ -54,7 +57,9 @@ func (cmd PassCommand) Run(c *Client, args []string) (int, error) {
 		c.printer.Err("PASS can be executed only directly after USER command")
 		return STATE_AUTHORIZATION, nil
 	}
-
+	if len(args) != 1 {
+		return 0, fmt.Errorf("Invalid arguments count: %d", len(args))
+	}
 	c.pass = args[0]
 	if !c.authorizator.Authorize(c.user, c.pass) {
 		c.printer.Err("Invalid username or password")
@@ -247,12 +252,7 @@ type CapaCommand struct{}
 func (cmd CapaCommand) Run(c *Client, args []string) (int, error) {
 	c.printer.Ok("")
 	var commands []string
-
-	if c.currentState == STATE_AUTHORIZATION {
-		commands = []string{"USER", "UIDL"}
-	} else {
-		commands = []string{"USER", "UIDL"}
-	}
+	commands = []string{"USER", "UIDL"}
 
 	c.printer.MultiLine(commands)
 

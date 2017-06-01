@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	STATE_AUTHORIZATION = iota
+	STATE_AUTHORIZATION = iota + 1
 	STATE_TRANSACTION
 	STATE_UPDATE
 )

@@ -1,75 +1,61 @@
 package popgun
 
 import (
+	"bufio"
+	"fmt"
 	"io/ioutil"
 	"net"
-	"testing"
-
-	"fmt"
-
-	"bufio"
-
 	"reflect"
+	"testing"
+	"time"
 
 	"github.com/DevelHell/popgun/backends"
 )
 
 func TestClient_handle(t *testing.T) {
+	s, c := net.Pipe()
+	defer s.Close()
+	defer c.Close()
+
 	backend := backends.DummyBackend{}
 	authorizator := backends.DummyAuthorizator{}
 	client := newClient(authorizator, backend)
 
 	go func() {
-		conn, err := net.Dial("tcp", ":3000")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer conn.Close()
-
-		reader := bufio.NewReader(conn)
-		//read welcome message
-		_, err = reader.ReadString('\n')
-		if err != nil {
-			t.Fatal(err)
-		}
-		//invalid command
-		expected := "-ERR Invalid command INVALID\r\n"
-		fmt.Fprintf(conn, "INVALID\n")
-		response, err := reader.ReadString('\n')
-		if response != expected {
-			t.Errorf("Expected '%s', but got '%s'", expected, response)
-		}
-
-		//error executing command - rset cannot be executed in current state
-		expected = "-ERR Error executing command RSET\r\n"
-		fmt.Fprintf(conn, "RSET\n")
-		response, err = reader.ReadString('\n')
-		if response != expected {
-			t.Errorf("Expected '%s', but got '%s'", expected, response)
-		}
-
-		//successful command
-		expected = "+OK Goodbye\r\n"
-		fmt.Fprintf(conn, "QUIT\n")
-		response, err = reader.ReadString('\n')
-		if response != expected {
-			t.Errorf("Expected '%s', but got '%s'", expected, response)
-		}
+		client.handle(s)
 	}()
 
-	l, err := net.Listen("tcp", ":3000")
+	reader := bufio.NewReader(c)
+	//read welcome message
+	response, err := reader.ReadString('\n')
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer l.Close()
 
-	conn, err := l.Accept()
+	//invalid command
+	expected := "-ERR Invalid command INVALID\r\n"
+	fmt.Fprintf(c, "INVALID\n")
+	response, err = reader.ReadString('\n')
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
-
-	client.handle(conn)
+	if response != expected {
+		t.Errorf("Expected '%s', but got '%s'", expected, response)
+	}
+	//error executing command - rset cannot be executed in current state
+	expected = "-ERR Error executing command RSET\r\n"
+	fmt.Fprintf(c, "RSET\n")
+	response, err = reader.ReadString('\n')
+	if response != expected {
+		t.Errorf("Expected '%s', but got '%s'", expected, response)
+	}
+	//successful command
+	expected = "+OK Goodbye\r\n"
+	fmt.Fprintf(c, "QUIT\n")
+	response, err = reader.ReadString('\n')
+	if response != expected {
+		t.Errorf("Expected '%s', but got '%s'", expected, response)
+	}
 }
 
 func TestClient_parseInput(t *testing.T) {
@@ -100,16 +86,18 @@ func TestClient_parseInput(t *testing.T) {
 }
 
 func TestServer_Start(t *testing.T) {
-	backend := backends.DummyBackend{}
-	authorizator := backends.DummyAuthorizator{}
 	cfg := Config{
 		ListenInterface: "localhost:3001",
 	}
+	backend := backends.DummyBackend{}
+	authorizator := backends.DummyAuthorizator{}
 	server := NewServer(cfg, authorizator, backend)
 	server.Start()
-	conn, err := net.Dial("tcp", cfg.ListenInterface)
+
+	conn, err := net.DialTimeout("tcp", cfg.ListenInterface, 3*time.Second)
 	if err != nil {
 		t.Errorf("Expected listening on '%s', but could not connect", cfg.ListenInterface)
+		return
 	}
 	defer conn.Close()
 }
@@ -117,33 +105,18 @@ func TestServer_Start(t *testing.T) {
 type printerFunc func(conn net.Conn)
 
 func printerTest(t *testing.T, f printerFunc) string {
-	go func() {
-		conn, err := net.Dial("tcp", ":3000")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer conn.Close()
+	s, c := net.Pipe()
+	defer s.Close()
 
-		f(conn)
+	go func() {
+		f(c)
+		c.Close()
 	}()
 
-	l, err := net.Listen("tcp", ":3000")
+	buf, err := ioutil.ReadAll(s)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer l.Close()
-
-	conn, err := l.Accept()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-
-	buf, err := ioutil.ReadAll(conn)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	return string(buf[:])
 }
 
