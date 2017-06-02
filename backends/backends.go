@@ -21,6 +21,9 @@ func (b DummyBackend) List(user string) (octets []int, err error) {
 	return []int{10, 10, 10, 10, 10}, nil
 }
 func (b DummyBackend) ListMessage(user string, msgId int) (exists bool, octets int, err error) {
+	if msgId > 4 {
+		return false, 0, nil
+	}
 	return true, 10, nil
 }
 func (b DummyBackend) Retr(user string, msgId int) (message string, err error) {
@@ -36,6 +39,9 @@ func (b DummyBackend) Uidl(user string) (uids []string, err error) {
 	return []string{"1", "2", "3", "4", "5"}, nil
 }
 func (b DummyBackend) UidlMessage(user string, msgId int) (exists bool, uid string, err error) {
+	if msgId > 4 {
+		return false, "", nil
+	}
 	return true, fmt.Sprintf("%d", msgId+1), nil
 }
 func (b DummyBackend) Update(user string) error {

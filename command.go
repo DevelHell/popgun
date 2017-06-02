@@ -230,7 +230,7 @@ func (cmd UidlCommand) Run(c *Client, args []string) (int, error) {
 			c.printer.Err("no such message")
 			return STATE_TRANSACTION, nil
 		}
-		c.printer.Ok("%d %d", msgId, uid)
+		c.printer.Ok("%d %s", msgId, uid)
 	} else {
 		uids, err := c.backend.Uidl(c.user)
 		if err != nil {

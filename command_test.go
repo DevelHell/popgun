@@ -164,11 +164,93 @@ func TestStatCommand_Run(t *testing.T) {
 }
 
 func TestListCommand_Run(t *testing.T) {
+	testCases := []cmdTestCase{
+		{
+			cmd:            ListCommand{},
+			initialState:   STATE_AUTHORIZATION,
+			args:           []string{},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "",
+		},
+		{
+			cmd:            ListCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"a"},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "^\\-ERR Invalid argument: a",
+		},
+		{
+			cmd:            ListCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"1"},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\+OK 1 10",
+		},
+		{
+			cmd:            ListCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"6"},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\-ERR no such message",
+		},
+		{
+			cmd:            ListCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\+OK 5 messages\r\n0 10\r\n1 10\r\n2 10\r\n3 10\r\n4 10\r\n\\.",
+		},
+	}
 
+	for _, testCase := range testCases {
+		commandTest(t, testCase)
+	}
 }
 
 func TestRetrCommand_Run(t *testing.T) {
+	testCases := []cmdTestCase{
+		{
+			cmd:            RetrCommand{},
+			initialState:   STATE_AUTHORIZATION,
+			args:           []string{},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "",
+		},
+		{
+			cmd:            RetrCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "^\\-ERR Missing argument for RETR command",
+		},
+		{
+			cmd:            RetrCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"a"},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "^\\-ERR Invalid argument: a",
+		},
+		{
+			cmd:            RetrCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"1"},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\+OK \r\nthis is dummy message\r\n\\.",
+		},
+	}
 
+	for _, testCase := range testCases {
+		commandTest(t, testCase)
+	}
 }
 
 func TestDeleCommand_Run(t *testing.T) {
@@ -238,11 +320,77 @@ func TestNoopCommand_Run(t *testing.T) {
 }
 
 func TestRsetCommand_Run(t *testing.T) {
+	testCases := []cmdTestCase{
+		{
+			cmd:            RsetCommand{},
+			initialState:   STATE_AUTHORIZATION,
+			args:           []string{},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "",
+		},
+		{
+			cmd:            RsetCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\+OK ",
+		},
+	}
 
+	for _, testCase := range testCases {
+		commandTest(t, testCase)
+	}
 }
 
 func TestUidlCommand_Run(t *testing.T) {
+	testCases := []cmdTestCase{
+		{
+			cmd:            UidlCommand{},
+			initialState:   STATE_AUTHORIZATION,
+			args:           []string{},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "",
+		},
+		{
+			cmd:            UidlCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"a"},
+			expectedState:  0,
+			expectedErr:    true,
+			expectedOutput: "^\\-ERR Invalid argument: a",
+		},
+		{
+			cmd:            UidlCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"6"},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\-ERR no such message",
+		},
+		{
+			cmd:            UidlCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{"1"},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\+OK 1 2",
+		},
+		{
+			cmd:            UidlCommand{},
+			initialState:   STATE_TRANSACTION,
+			args:           []string{},
+			expectedState:  STATE_TRANSACTION,
+			expectedErr:    false,
+			expectedOutput: "^\\+OK 5 messages\r\n0 1\r\n1 2\r\n2 3\r\n3 4\r\n4 5\r\n\\.",
+		},
+	}
 
+	for _, testCase := range testCases {
+		commandTest(t, testCase)
+	}
 }
 
 func TestCapaCommand_Run(t *testing.T) {
@@ -253,7 +401,7 @@ func TestCapaCommand_Run(t *testing.T) {
 			args:           []string{},
 			expectedState:  STATE_TRANSACTION,
 			expectedErr:    false,
-			expectedOutput: "^\\+OK \r\nUSER\r\nUIDL\r\n.",
+			expectedOutput: "^\\+OK \r\nUSER\r\nUIDL\r\n\\.",
 		},
 		{
 			cmd:            CapaCommand{},
@@ -261,7 +409,7 @@ func TestCapaCommand_Run(t *testing.T) {
 			args:           []string{},
 			expectedState:  STATE_AUTHORIZATION,
 			expectedErr:    false,
-			expectedOutput: "^\\+OK \r\nUSER\r\nUIDL\r\n.",
+			expectedOutput: "^\\+OK \r\nUSER\r\nUIDL\r\n\\.",
 		},
 	}
 
