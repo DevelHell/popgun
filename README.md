@@ -17,26 +17,28 @@ import (
 )
 ```
 
-#### 2. Prepare config file
-```go
-cfg := popgun.Config{
-		ListenInterface: "localhost:1100",
-	}
-```
+#### 2. Implement Authorizator and Backend interfaces
 
-#### 3. Implement Authorizator and Backend interfaces
+`Authorizator` is used for user authorization and there's only one function `Authorize(user, pass string)`. Be aware that single instance is shared
+across all client connections.
 
-Example dummy implementations can be found in `backend` package. When your're done, create an instance of both of them:
+`Bacakend` is used for mail storage access, e.g. database storage. Single `Backend` instance is shared across all client connections connections as well. 
+
+Example dummy implementations can be found in `backend` package, see comments in these files for more information. When your're done, create an instance of both of them:
 ```go
 backend := backends.DummyBackend{}
 authorizator := backends.DummyAuthorizator{}
 ```
 
-#### 4. Run the server
-
+#### 3. Configure and run the server
+There is only one configuration field for now - `ListenInterface`, which defines interface (ip address) and port to listen on.
 Server is started in separate go routine, so be sure to keep the server busy, e.g. using wait groups:
 
 ```go
+cfg := popgun.Config{
+    ListenInterface: "localhost:1100",
+}
+
 var wg sync.WaitGroup
 wg.Add(1)
 
