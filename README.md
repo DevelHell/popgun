@@ -22,7 +22,7 @@ import (
 `Authorizator` is used for user authorization and there's only one function `Authorize(user, pass string)`. Be aware that single instance is shared
 across all client connections.
 
-`Bacakend` is used for mail storage access, e.g. database storage. Single `Backend` instance is shared across all client connections connections as well. 
+`Backend` is used for mail storage access, e.g. database storage. Single `Backend` instance is shared across all client connections connections as well. 
 
 Example dummy implementations can be found in `backend` package, see comments in these files for more information. When your're done, create an instance of both of them:
 ```go
