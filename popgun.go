@@ -194,7 +194,12 @@ func (p Printer) Err(msg string, a ...interface{}) {
 
 func (p Printer) MultiLine(msgs []string) {
 	for _, line := range msgs {
-		fmt.Fprintf(p.conn, "%s\r\n", line)
+		line := strings.Trim(line, "\r")
+		if strings.HasPrefix(line, ".") {
+			fmt.Fprintf(p.conn, ".%s\r\n", line)
+		} else {
+			fmt.Fprintf(p.conn, "%s\r\n", line)
+		}
 	}
 	fmt.Fprint(p.conn, ".\r\n")
 }

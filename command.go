@@ -151,7 +151,7 @@ func (cmd RetrCommand) Run(c *Client, args []string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("Error calling 'RETR %d' for user %s: %v", msgId, c.user, err)
 	}
-	lines := strings.Split(message, "\r\n")
+	lines := strings.Split(message, "\n")
 	c.printer.Ok("")
 	c.printer.MultiLine(lines)
 	return STATE_TRANSACTION, nil
