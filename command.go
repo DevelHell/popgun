@@ -122,7 +122,7 @@ func (cmd ListCommand) Run(c *Client, args []string) (int, error) {
 		c.printer.Ok("%d messages", len(octets))
 		messagesList := make([]string, len(octets))
 		for i, octet := range octets {
-			messagesList[i] = fmt.Sprintf("%d %d", i+1, octet)
+			messagesList[i] = fmt.Sprintf("%d %d", i, octet)
 		}
 		c.printer.MultiLine(messagesList)
 	}
@@ -239,7 +239,7 @@ func (cmd UidlCommand) Run(c *Client, args []string) (int, error) {
 		c.printer.Ok("%d messages", len(uids))
 		uidsList := make([]string, len(uids))
 		for i, uid := range uids {
-			uidsList[i] = fmt.Sprintf("%d %s", i+1, uid)
+			uidsList[i] = fmt.Sprintf("%d %s", i, uid)
 		}
 		c.printer.MultiLine(uidsList)
 	}
