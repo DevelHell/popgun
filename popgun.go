@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 )
 
 const (
@@ -84,6 +85,7 @@ func newClient(authorizator Authorizator, backend Backend) *Client {
 
 func (c Client) handle(conn net.Conn) {
 	defer conn.Close()
+	conn.SetReadDeadline(time.Now().Add(1 * time.Minute))
 	c.printer = NewPrinter(conn)
 
 	c.isAlive = true
@@ -99,6 +101,10 @@ func (c Client) handle(conn net.Conn) {
 				log.Print("Connection closed by client")
 			} else {
 				log.Print("Error reading input: ", err)
+			}
+			if len(c.user) > 0 {
+				log.Printf("Unlocking user %s due to connection error ", c.user)
+				c.backend.Unlock(c.user)
 			}
 			break
 		}
