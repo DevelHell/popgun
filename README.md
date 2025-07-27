@@ -42,7 +42,7 @@ cfg := popgun.Config{
 var wg sync.WaitGroup
 wg.Add(1)
 
-server := NewServer(cfg, authorizator, backend)
+server := popgun.NewServer(cfg, authorizator, backend)
 err := server.Start()
 if err != nil {
     log.Fatal(err)
